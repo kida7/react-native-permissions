@@ -17,5 +17,5 @@ Pod::Spec.new do |s|
   s.requires_arc              = true
 
   s.source                    = { :git => package["repository"]["url"], :tag => s.version }
-  s.source_files              = "StoreKit/*.{h,m}"
+  s.source_files              = "ios/StoreKit/*.{h,m}"
 end

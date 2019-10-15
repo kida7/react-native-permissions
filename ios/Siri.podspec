@@ -17,5 +17,5 @@ Pod::Spec.new do |s|
   s.requires_arc              = true
 
   s.source                    = { :git => package["repository"]["url"], :tag => s.version }
-  s.source_files              = "Siri/*.{h,m}"
+  s.source_files              = "ios/Siri/*.{h,m}"
 end
