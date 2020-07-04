@@ -39,9 +39,9 @@
 	</dict>
 	<key>NSAppleMusicUsageDescription</key>
 	<string>Let me use your media library</string>
-	<key>NSBluetoothPeripheralUsageDescription</key>
-	<string>Let me use bluetooth</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Let me use bluetooth</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>Let me use bluetooth</string>
 	<key>NSCalendarsUsageDescription</key>
 	<string>Let me use your calendars</string>
@@ -69,7 +69,7 @@
 	<string>Let me use speech recognition</string>
 	<key>UIAppFonts</key>
 	<array>
-		<string>MaterialIcons.ttf</string>
+		<string>MaterialCommunityIcons.ttf</string>
 	</array>
 	<key>UIBackgroundModes</key>
 	<array>

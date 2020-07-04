@@ -1,23 +1,14 @@
 import React from 'react';
+import {FlatList, Platform, StatusBar, Text, View} from 'react-native';
 import {Appbar, List, TouchableRipple} from 'react-native-paper';
-import theme from './theme';
-
-import {
-  FlatList,
-  Platform,
-  StatusBar,
-  Text,
-  View,
-  GestureResponderEvent,
-} from 'react-native';
-
 import RNPermissions, {
-  PERMISSIONS,
-  RESULTS,
-  PermissionStatus,
-  Permission,
   NotificationsResponse,
+  Permission,
+  PERMISSIONS,
+  PermissionStatus,
+  RESULTS,
 } from 'react-native-permissions';
+import theme from './theme';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const {SIRI, ...PERMISSIONS_IOS} = PERMISSIONS.IOS; // remove siri (certificate required)
@@ -40,10 +31,10 @@ const colors: {[key: string]: string} = {
 };
 
 const icons: {[key: string]: string} = {
-  unavailable: 'lens',
-  denied: 'error',
+  unavailable: 'circle',
+  denied: 'alert-circle',
   granted: 'check-circle',
-  blocked: 'cancel',
+  blocked: 'close-circle',
 };
 
 const PermissionRow = ({
@@ -53,7 +44,7 @@ const PermissionRow = ({
 }: {
   name: string;
   status: string;
-  onPress: (event: GestureResponderEvent) => void;
+  onPress: () => void;
 }) => (
   <TouchableRipple onPress={onPress}>
     <List.Item
@@ -65,33 +56,36 @@ const PermissionRow = ({
 );
 
 interface State {
-  statuses: PermissionStatus[];
+  statuses: Partial<Record<Permission, PermissionStatus>>;
   notifications: NotificationsResponse;
 }
 
-function getSettingString(setting: boolean | undefined) {
-  return setting
-    ? RESULTS.GRANTED
-    : setting === false
-    ? RESULTS.DENIED
-    : RESULTS.UNAVAILABLE;
+function toSettingString(setting: boolean | undefined) {
+  switch (setting) {
+    case true:
+      return RESULTS.GRANTED;
+    case false:
+      return RESULTS.DENIED;
+    default:
+      return RESULTS.UNAVAILABLE;
+  }
 }
 
 export default class App extends React.Component<{}, State> {
   state: State = {
-    statuses: [],
+    statuses: {},
     notifications: {status: 'unavailable', settings: {}},
   };
 
   check = () =>
-    Promise.all(PERMISSIONS_VALUES.map(_ => RNPermissions.check(_)))
-      .then(statuses => this.setState({statuses}))
+    RNPermissions.checkMultiple(PERMISSIONS_VALUES)
+      .then((statuses) => this.setState({statuses}))
       .then(() => RNPermissions.checkNotifications())
-      .then(notifications => this.setState({notifications}))
-      .catch(error => console.warn(error));
+      .then((notifications) => this.setState({notifications}))
+      .catch((error) => console.warn(error));
 
   refresh = () => {
-    this.setState({statuses: []}, this.check);
+    this.setState({statuses: {}}, this.check);
   };
 
   componentDidMount() {
@@ -118,17 +112,23 @@ export default class App extends React.Component<{}, State> {
           <Appbar.Action onPress={this.refresh} icon="refresh" />
 
           <Appbar.Action
-            onPress={RNPermissions.openSettings}
-            icon="settings-applications"
+            icon="settings"
+            onPress={() => {
+              RNPermissions.openSettings();
+            }}
           />
         </Appbar.Header>
 
         <FlatList
-          keyExtractor={item => item}
+          keyExtractor={(item) => item}
           data={Object.keys(PLATFORM_PERMISSIONS)}
           renderItem={({item, index}) => {
             const value = PERMISSIONS_VALUES[index];
-            const status = this.state.statuses[index];
+            const status = this.state.statuses[value];
+
+            if (!status) {
+              return null;
+            }
 
             return (
               <PermissionRow
@@ -137,7 +137,7 @@ export default class App extends React.Component<{}, State> {
                 onPress={() => {
                   RNPermissions.request(value)
                     .then(() => this.check())
-                    .catch(err => console.error(err));
+                    .catch((error) => console.error(error));
                 }}
               />
             );
@@ -153,7 +153,7 @@ export default class App extends React.Component<{}, State> {
           onPress={() => {
             RNPermissions.requestNotifications(['alert', 'badge', 'sound'])
               .then(() => this.check())
-              .catch(err => console.error(err));
+              .catch((error) => console.error(error));
           }}>
           <List.Item
             right={() => (
@@ -168,15 +168,15 @@ export default class App extends React.Component<{}, State> {
         </TouchableRipple>
 
         <Text style={{margin: 15, marginTop: 0, color: '#777'}}>
-          {`alert: ${getSettingString(settings.alert)}\n`}
-          {`badge: ${getSettingString(settings.badge)}\n`}
-          {`sound: ${getSettingString(settings.sound)}\n`}
-          {`lockScreen: ${getSettingString(settings.lockScreen)}\n`}
-          {`notificationCenter: ${getSettingString(
+          {`alert: ${toSettingString(settings.alert)}\n`}
+          {`badge: ${toSettingString(settings.badge)}\n`}
+          {`sound: ${toSettingString(settings.sound)}\n`}
+          {`lockScreen: ${toSettingString(settings.lockScreen)}\n`}
+          {`notificationCenter: ${toSettingString(
             settings.notificationCenter,
           )}\n`}
-          {`carPlay: ${getSettingString(settings.carPlay)}\n`}
-          {`criticalAlert: ${getSettingString(settings.criticalAlert)}\n`}
+          {`carPlay: ${toSettingString(settings.carPlay)}\n`}
+          {`criticalAlert: ${toSettingString(settings.criticalAlert)}\n`}
         </Text>
       </View>
     );

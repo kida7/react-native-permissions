@@ -2,6 +2,8 @@ import {ANDROID, IOS, RESULTS} from './constants';
 
 type Values<T extends object> = T[keyof T];
 
+export {Rationale} from 'react-native';
+
 export type AndroidPermission = Values<typeof ANDROID>;
 export type IOSPermission = Values<typeof IOS>;
 export type Permission = AndroidPermission | IOSPermission;
@@ -12,18 +14,18 @@ export type NotificationOption =
   | 'alert'
   | 'badge'
   | 'sound'
-  | 'criticalAlert'
   | 'carPlay'
+  | 'criticalAlert'
   | 'provisional';
 
 export interface NotificationSettings {
   alert?: boolean;
   badge?: boolean;
   sound?: boolean;
-  lockScreen?: boolean;
   carPlay?: boolean;
-  notificationCenter?: boolean;
   criticalAlert?: boolean;
+  lockScreen?: boolean;
+  notificationCenter?: boolean;
 }
 
 export interface NotificationsResponse {

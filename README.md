@@ -54,8 +54,6 @@ target 'YourAwesomeProject' do
 end
 ```
 
-_⚠️  If you have the error `Invalid RNPermission X. Should be one of: ()`, try to cleanup Xcode stale data with `npx react-native-clean-project --remove-iOS-build --remove-iOS-pods && rm -fr ./node_modules`_
-
 Then update your `Info.plist` with wanted permissions usage descriptions:
 
 ```xml
@@ -96,6 +94,8 @@ Then update your `Info.plist` with wanted permissions usage descriptions:
   <string>YOUR TEXT</string>
   <key>NSSpeechRecognitionUsageDescription</key>
   <string>YOUR TEXT</string>
+  <key>NSSiriUsageDescription</key>
+  <string>YOUR TEXT</string>
 
   <!-- … -->
 
@@ -103,9 +103,30 @@ Then update your `Info.plist` with wanted permissions usage descriptions:
 </plist>
 ```
 
+#### Workaround for `use_frameworks!` issues
+
+If you use `use_frameworks!`, add this at the top of your `Podfile`:
+
+```ruby
+use_frameworks!
+
+# Convert all permission pods into static libraries
+pre_install do |installer|
+  installer.pod_targets.each do |pod|
+    if pod.name.eql?('RNPermissions') || pod.name.start_with?('Permission-')
+      def pod.build_type;
+        # Uncomment one line depending on your CocoaPods version
+        # Pod::BuildType.static_library # >= 1.9
+        # Pod::Target::BuildType.static_library # < 1.9
+      end
+    end
+  end
+end
+```
+
 ### Android
 
-Add all wanted permissions to your app `android/app/src/main/res/AndroidManifest.xml` file:
+Add all wanted permissions to your app `android/app/src/main/AndroidManifest.xml` file:
 
 ```xml
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
@@ -150,7 +171,7 @@ Add all wanted permissions to your app `android/app/src/main/res/AndroidManifest
 
 ## 🆘 Manual linking
 
-Because this package targets React Native 0.60.0+, you will probably don't need to link it manually. Otherwise if it's not the case, follow this additional instructions:
+Because this package targets React Native 0.60.0+, you probably won't need to link it manually. Otherwise if it's not the case, follow this additional instructions:
 
 <details>
   <summary><b>👀 See manual linking instructions</b></summary>
@@ -400,7 +421,7 @@ function check(permission: string): Promise<PermissionStatus>;
 import {check, PERMISSIONS, RESULTS} from 'react-native-permissions';
 
 check(PERMISSIONS.IOS.LOCATION_ALWAYS)
-  .then(result => {
+  .then((result) => {
     switch (result) {
       case RESULTS.UNAVAILABLE:
         console.log(
@@ -420,7 +441,7 @@ check(PERMISSIONS.IOS.LOCATION_ALWAYS)
         break;
     }
   })
-  .catch(error => {
+  .catch((error) => {
     // …
   });
 ```
@@ -449,7 +470,7 @@ function request(
 ```js
 import {request, PERMISSIONS} from 'react-native-permissions';
 
-request(PERMISSIONS.IOS.LOCATION_ALWAYS).then(result => {
+request(PERMISSIONS.IOS.LOCATION_ALWAYS).then((result) => {
   // …
 });
 ```
@@ -533,6 +554,52 @@ requestNotifications(['alert', 'sound']).then(({status, settings}) => {
 
 ---
 
+#### checkMultiple
+
+Check multiples permissions in parallel.
+
+```ts
+function checkMultiple<P extends Permission[]>(
+  permissions: P,
+): Promise<Record<P[number], PermissionStatus>>;
+```
+
+```js
+import {checkMultiple, PERMISSIONS} from 'react-native-permissions';
+
+checkMultiple([PERMISSIONS.IOS.CAMERA, PERMISSIONS.IOS.FACE_ID]).then(
+  (statuses) => {
+    console.log('Camera', statuses[PERMISSIONS.IOS.CAMERA]);
+    console.log('FaceID', statuses[PERMISSIONS.IOS.FACE_ID]);
+  },
+);
+```
+
+---
+
+#### requestMultiple
+
+Request multiple permissions in sequence.
+
+```ts
+function requestMultiple<P extends Permission[]>(
+  permissions: P,
+): Promise<Record<P[number], PermissionStatus>>;
+```
+
+```js
+import {requestMultiple, PERMISSIONS} from 'react-native-permissions';
+
+requestMultiple([PERMISSIONS.IOS.CAMERA, PERMISSIONS.IOS.FACE_ID]).then(
+  (statuses) => {
+    console.log('Camera', statuses[PERMISSIONS.IOS.CAMERA]);
+    console.log('FaceID', statuses[PERMISSIONS.IOS.FACE_ID]);
+  },
+);
+```
+
+---
+
 #### openSettings
 
 Open application settings.
@@ -547,36 +614,24 @@ import {openSettings} from 'react-native-permissions';
 openSettings().catch(() => console.warn('cannot open settings'));
 ```
 
-## Additional recipes
+## Migrating from v1.x.x
 
-#### Check multiples permissions
-
-```js
-import {check, PERMISSIONS} from 'react-native-permissions';
-
-// can be done in parallel
-Promise.all([
-  check(PERMISSIONS.IOS.CAMERA),
-  check(PERMISSIONS.IOS.CONTACTS),
-  // …
-]).then(([cameraStatus, contactsStatus /* … */]) => {
-  console.log({cameraStatus, contactsStatus});
-});
-```
-
-#### Request multiples permissions
-
-_⚠️  It's a very bad UX pattern, avoid doing it!_
+If you are currently using the version `1.x.x` and would like to switch to `v2.x.x`, the only thing you really need to know is that it's now required to select the wanted permission **per platform**.
 
 ```js
-import {request, PERMISSIONS} from 'react-native-permissions';
+// v1.x.x
+import Permissions from 'react-native-permissions';
 
-// should be done in sequence
-async function requestAll() {
-  const cameraStatus = await request(PERMISSIONS.IOS.CAMERA);
-  const contactsStatus = await request(PERMISSIONS.IOS.CONTACTS);
-  return {cameraStatus, contactsStatus};
-}
+Permissions.request('location', {type: 'whenInUse'});
 
-console.log(requestAll());
+// v2.x.x
+import {Platform} from 'react-native';
+import {PERMISSIONS, request} from 'react-native-permissions';
+
+request(
+  Platform.select({
+    android: PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION,
+    ios: PERMISSIONS.IOS.LOCATION_WHEN_IN_USE,
+  }),
+);
 ```

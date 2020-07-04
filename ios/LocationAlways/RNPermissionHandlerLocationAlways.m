@@ -17,7 +17,6 @@
   return @[
     @"NSLocationAlwaysAndWhenInUseUsageDescription",
     @"NSLocationAlwaysUsageDescription",
-    @"NSLocationWhenInUseUsageDescription",
   ];
 }
 
@@ -27,7 +26,7 @@
 
 - (void)checkWithResolver:(void (^ _Nonnull)(RNPermissionStatus))resolve
                  rejecter:(void (__unused ^ _Nonnull)(NSError * _Nonnull))reject {
-  if (![CLLocationManager locationServicesEnabled] || ![RNPermissions isBackgroundModeEnabled:@"location"]) {
+  if (![CLLocationManager locationServicesEnabled]) {
     return resolve(RNPermissionStatusNotAvailable);
   }
 
@@ -46,7 +45,7 @@
 
 - (void)requestWithResolver:(void (^ _Nonnull)(RNPermissionStatus))resolve
                    rejecter:(void (^ _Nonnull)(NSError * _Nonnull))reject {
-  if (![CLLocationManager locationServicesEnabled] || ![RNPermissions isBackgroundModeEnabled:@"location"]) {
+  if (![CLLocationManager locationServicesEnabled]) {
     return resolve(RNPermissionStatusNotAvailable);
   }
   if ([CLLocationManager authorizationStatus] != kCLAuthorizationStatusNotDetermined) {
